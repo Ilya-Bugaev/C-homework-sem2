@@ -1,20 +1,21 @@
 #include "csv.h"
 
-bool isNumber(char *str){
+bool isNumber(char* str)
+{
     if (str == NULL) {
         return false;
     }
 
     // Провека на пустую строку и строку из пробелов
-    char *start = str;
-    while (*start && isspace((unsigned  char)*start)) {
+    char* start = str;
+    while (*start && isspace((unsigned char)*start)) {
         start++;
     }
     if (*start == '\0') {
         return false;
     }
 
-    char *endptr;
+    char* endptr;
     strtod(start, &endptr);
     if (start == endptr) {
         return false;
@@ -25,30 +26,29 @@ bool isNumber(char *str){
     return *endptr == '\0';
 }
 
-
-char** splitLine(char line[], int *actualCols) //Строка, которую делим и указатель на число полей. Возвращаем 
+char** splitLine(char line[], int* actualCols) // Строка, которую делим и указатель на число полей. Возвращаем
 {
     if (line == NULL || actualCols == NULL) {
         return NULL;
     }
 
     int count = 1;
-    for (char *p = line; *p; p++) {
+    for (char* p = line; *p; p++) {
         if (*p == ',') {
             count++;
         }
     }
 
     *actualCols = count;
-    char **fields = malloc(sizeof(char*) * count);
+    char** fields = malloc(sizeof(char*) * count);
     if (fields == NULL) {
         return NULL;
     }
 
-    char *p = line;
-    char *start = line;
+    char* p = line;
+    char* start = line;
     int idx = 0;
-    while(*p && *p != '\n') {
+    while (*p && *p != '\n') {
         if (*p == ',') {
             *p = '\0';
             fields[idx] = start;
@@ -67,7 +67,7 @@ char** splitLine(char line[], int *actualCols) //Строка, которую д
     return fields;
 }
 
-void printSeparation(FILE *out, char ch, int *widths, int cols)
+void printSeparation(FILE* out, char ch, int* widths, int cols)
 {
     fputc('+', out);
     for (int i = 0; i < cols; i++) {
@@ -82,14 +82,14 @@ void printSeparation(FILE *out, char ch, int *widths, int cols)
     fputc('\n', out);
 }
 
-void printRow (FILE *out, char **row, int *widths, int cols, int isHeader)
+void printRow(FILE* out, char** row, int* widths, int cols, int isHeader)
 {
     fputc('|', out);
     for (int i = 0; i < cols; i++) {
         if (isHeader || !isNumber(row[i])) {
             fprintf(out, " %-*s ", widths[i], row[i]); // выравнивание влево
         } else {
-            fprintf(out, " %*s ", widths[i], row[i]);  // выравнивание вправо (числа)
+            fprintf(out, " %*s ", widths[i], row[i]); // выравнивание вправо (числа)
         }
         if (i < cols - 1) {
             fputc('|', out);
@@ -99,13 +99,15 @@ void printRow (FILE *out, char **row, int *widths, int cols, int isHeader)
     fputc('\n', out);
 }
 
-void freeData(char ***data, int count, int columns)
+void freeData(char*** data, int count, int columns)
 {
-    if (!data) return;
+    if (!data)
+        return;
     for (int i = 0; i < count; i++) {
         if (data[i]) {
             for (int j = 0; j < columns; j++) {
-                if (data[i][j]) free(data[i][j]);
+                if (data[i][j])
+                    free(data[i][j]);
             }
             free(data[i]);
         }
@@ -113,27 +115,30 @@ void freeData(char ***data, int count, int columns)
     free(data);
 }
 
-void freeHeader(char **header, int columns)
+void freeHeader(char** header, int columns)
 {
-    if (!header) return;
+    if (!header)
+        return;
     for (int i = 0; i < columns; i++) {
-        if (header[i]) free(header[i]);
+        if (header[i])
+            free(header[i]);
     }
     free(header);
 }
 
-char* readLine(FILE *file, size_t *len)
+char* readLine(FILE* file, size_t* len)
 {
     size_t capacity = 256;
     size_t size = 0;
-    char *buffer = malloc(capacity);
-    if (!buffer) return NULL;
-    
+    char* buffer = malloc(capacity);
+    if (!buffer)
+        return NULL;
+
     int c;
     while ((c = fgetc(file)) != EOF && c != '\n') {
         if (size + 1 >= capacity) {
             capacity *= 2;
-            char *newBuffer = realloc(buffer, capacity);
+            char* newBuffer = realloc(buffer, capacity);
             if (!newBuffer) {
                 free(buffer);
                 return NULL;
@@ -142,13 +147,14 @@ char* readLine(FILE *file, size_t *len)
         }
         buffer[size++] = c;
     }
-    
+
     if (size == 0 && c == EOF) {
         free(buffer);
         return NULL;
     }
-    
+
     buffer[size] = '\0';
-    if (len) *len = size;
+    if (len)
+        *len = size;
     return buffer;
 }

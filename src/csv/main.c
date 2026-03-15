@@ -5,21 +5,20 @@
 
 int main()
 {
-    FILE *in = fopen("input.csv", "r");
+    FILE* in = fopen("input.csv", "r");
     if (!in) {
         fprintf(stderr, "Cannot open input file input.csv\n");
         return 1;
     }
 
-    FILE *out = fopen("output.txt", "w");
+    FILE* out = fopen("output.txt", "w");
     if (!out) {
         fprintf(stderr, "Cannot open output file output.txt");
         fclose(in);
         return 1;
     }
 
-
-    char *line = NULL;
+    char* line = NULL;
     size_t len = 0;
 
     line = readLine(in, &len);
@@ -30,9 +29,8 @@ int main()
         return 1;
     }
 
-
     int columns;
-    char **headerFields = splitLine(line, &columns); // Массив указателей на первый элемент поля таблицы
+    char** headerFields = splitLine(line, &columns); // Массив указателей на первый элемент поля таблицы
 
     if (!headerFields) {
         fprintf(stderr, "Failed to parse header\n");
@@ -41,7 +39,7 @@ int main()
         return 1;
     }
 
-    char **header = malloc(columns * sizeof(char*));
+    char** header = malloc(columns * sizeof(char*));
     if (!header) {
         fprintf(stderr, "Memory allocation error\n");
         free(headerFields);
@@ -55,7 +53,8 @@ int main()
         if (!header[i]) {
             fprintf(stderr, "Memory allocation error\n");
             // Очищаем то, что успели выделить
-            for (int j = 0; j < i; j++) free(header[j]);
+            for (int j = 0; j < i; j++)
+                free(header[j]);
             free(header);
             free(headerFields);
             fclose(in);
@@ -65,10 +64,9 @@ int main()
     }
     free(line);
     free(headerFields);
-    
 
     int capacity = 10;
-    char ***data = malloc(capacity * sizeof(char**)); // Указатель на строки таблицы
+    char*** data = malloc(capacity * sizeof(char**)); // Указатель на строки таблицы
     if (!data) {
         fprintf(stderr, "Memory allocation error\n");
         freeHeader(header, columns);
@@ -79,15 +77,15 @@ int main()
 
     int count = 0;
     int actualCols;
-   
-     while ((line = readLine(in, &len)) != NULL) {
-        char **fields = splitLine(line, &actualCols);
+
+    while ((line = readLine(in, &len)) != NULL) {
+        char** fields = splitLine(line, &actualCols);
         if (!fields) {
             free(line);
             continue;
         }
 
-        char **row = malloc(columns * sizeof(char*));
+        char** row = malloc(columns * sizeof(char*));
         if (!row) {
             fprintf(stderr, "Memory allocation error\n");
             free(fields);
@@ -106,12 +104,13 @@ int main()
             } else {
                 row[i] = strdup("");
             }
-            
+
             if (!row[i]) {
                 fprintf(stderr, "Memory allocation error\n");
                 free(fields);
                 // Очищаем текущую строку
-                for (int j = 0; j < i; j++) free(row[j]);
+                for (int j = 0; j < i; j++)
+                    free(row[j]);
                 free(row);
                 // Очищаем всё остальное
                 freeData(data, count, columns);
@@ -127,11 +126,12 @@ int main()
         // Увеличение массива данных при необходимости
         if (count == capacity) {
             capacity *= 2;
-            char ***newData = realloc(data, capacity * sizeof(char**));
+            char*** newData = realloc(data, capacity * sizeof(char**));
             if (!newData) {
                 fprintf(stderr, "Memory allocation error\n");
                 // Очищаем текущую строку, так как она еще не добавлена в data
-                for (int i = 0; i < columns; i++) free(row[i]);
+                for (int i = 0; i < columns; i++)
+                    free(row[i]);
                 free(row);
                 freeData(data, count, columns);
                 freeHeader(header, columns);
@@ -145,7 +145,7 @@ int main()
     }
 
     // Выделение памяти под ширины колонок
-    int *widths = malloc(columns * sizeof(int));
+    int* widths = malloc(columns * sizeof(int));
     if (!widths) {
         fprintf(stderr, "Memory allocation error\n");
         freeData(data, count, columns);
@@ -163,10 +163,10 @@ int main()
     for (int r = 0; r < count; r++) {
         for (int c = 0; c < columns; c++) {
             int len = strlen(data[r][c]);
-            if (len > widths[c]) widths[c] = len;
+            if (len > widths[c])
+                widths[c] = len;
         }
     }
-
 
     // Верхняя граница
     printSeparation(out, '=', widths, columns);
@@ -184,12 +184,11 @@ int main()
     // Закрытие таблицы
     printSeparation(out, '-', widths, columns);
 
-
     free(widths);
     freeData(data, count, columns);
     freeHeader(header, columns);
     fclose(in);
-    fclose(out);   
+    fclose(out);
 
     return 0;
 }
