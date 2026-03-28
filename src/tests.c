@@ -74,88 +74,154 @@ void runTest(const char* name, const char* input, const char* expected)
 }
 
 // Тесты
-void testBasicTwoCapitals()
+void testBasicTwoCapitals(void)
 {
     printf("Testing basic two capitals...\n");
     runTest(
         "basicTwoCapitals",
-        "5 5\n1 2 10\n2 3 5\n3 4 1\n4 5 2\n1 5 20\n2\n1 4\n",
-        "1: 1\n2: 2 3 4 5\n"
+        "5 5\n"
+        "1 2 10\n"
+        "2 3 5\n"
+        "3 4 1\n"
+        "4 5 2\n"
+        "1 5 20\n"
+        "2\n"
+        "1 4\n",
+        "1: 1\n"
+        "2: 2 3 4 5\n"
     );
 }
 
-void testSingleCapital()
+void testSingleCapital(void)
 {
     printf("Testing single capital...\n");
     runTest(
         "singleCapital",
-        "4 3\n1 2 5\n2 3 10\n3 4 15\n1\n1\n",
-        "1: 1 2 3 4\n");
+        "4 3\n"
+        "1 2 5\n"
+        "2 3 10\n"
+        "3 4 15\n"
+        "1\n"
+        "1\n",
+        "1: 1 2 3 4\n"
+    );
 }
 
-void testEqualWeights()
+void testEqualWeights(void)
 {
     printf("Testing equal edge weights...\n");
     runTest(
         "equalWeights",
-        "6 5\n1 2 1\n2 3 1\n3 4 1\n4 5 1\n5 6 1\n2\n1 6\n",
-        "1: 1 2 3\n2: 4 5 6\n");
+        "6 5\n"
+        "1 2 1\n"
+        "2 3 1\n"
+        "3 4 1\n"
+        "4 5 1\n"
+        "5 6 1\n"
+        "2\n"
+        "1 6\n",
+        "1: 1 2 3\n"
+        "2: 4 5 6\n"
+    );
 }
 
-void testLinearGraph()
+void testLinearGraph(void)
 {
     printf("Testing linear graph...\n");
     runTest(
         "linearGraph",
-        "5 4\n1 2 2\n2 3 3\n3 4 4\n4 5 5\n2\n2 4\n",
-        "1: 1 2 3\n2: 4 5\n");
+        "5 4\n"
+        "1 2 2\n"
+        "2 3 3\n"
+        "3 4 4\n"
+        "4 5 5\n"
+        "2\n"
+        "2 4\n",
+        "1: 1 2 3\n"
+        "2: 4 5\n"
+    );
 }
 
-void testThreeStates()
+void testThreeStates(void)
 {
     printf("Testing three states...\n");
     runTest(
         "threeStates",
-        "7 6\n1 2 10\n2 3 20\n3 4 30\n4 5 40\n5 6 50\n6 7 60\n3\n1 4 7\n",
-        "1: 1 2 3\n2: 4 5 6\n3: 7\n"
+        "7 6\n"
+        "1 2 10\n"
+        "2 3 20\n"
+        "3 4 30\n"
+        "4 5 40\n"
+        "5 6 50\n"
+        "6 7 60\n"
+        "3\n"
+        "1 4 7\n",
+        "1: 1 2 3\n"
+        "2: 4 5 6\n"
+        "3: 7\n"
     );
 }
 
-void testStarGraph()
+void testStarGraph(void)
 {
     printf("Testing star graph...\n");
     runTest(
         "starGraph",
-        "5 4\n1 2 1\n1 3 2\n1 4 3\n1 5 4\n2\n2 5\n",
-        "1: 1 2 3 4\n2: 5\n");
+        "5 4\n"
+        "1 2 1\n"
+        "1 3 2\n"
+        "1 4 3\n"
+        "1 5 4\n"
+        "2\n"
+        "2 5\n",
+        "1: 1 2 3 4\n"
+        "2: 5\n"
+    );
 }
 
-void testMinimalGraph()
+void testMinimalGraph(void)
 {
     printf("Testing minimal graph...\n");
     runTest(
         "minimalGraph",
-        "2 1\n1 2 100\n2\n1 2\n",
-        "1: 1\n2: 2\n");
+        "2 1\n"
+        "1 2 100\n"
+        "2\n"
+        "1 2\n",
+        "1: 1\n"
+        "2: 2\n"
+    );
 }
 
-void testDifferentWeights()
+void testDifferentWeights(void)
 {
     printf("Testing different weights...\n");
     runTest(
         "differentWeights",
-        "4 3\n1 2 1\n2 3 2\n3 4 100\n2\n1 4\n",
-        "1: 1 2 3\n2: 4\n");
+        "4 3\n"
+        "1 2 1\n"
+        "2 3 2\n"
+        "3 4 100\n"
+        "2\n"
+        "1 4\n",
+        "1: 1 2 3\n"
+        "2: 4\n"
+    );
 }
 
-void testMemoryCleanup()
+void testMemoryCleanup(void)
 {
     printf("Testing memory cleanup...\n");
     for (int i = 0; i < 10; i++) {
         runTest(
             "memoryCleanup",
-            "3 2\n1 2 1\n2 3 1\n1\n1\n",
-            "1: 1 2 3\n");
+            "3 2\n"
+            "1 2 1\n"
+            "2 3 1\n"
+            "1\n"
+            "1\n",
+            "1: 1 2 3\n"
+        );
     }
     check(1, "memoryCleanup", "no crash in repeated runs");
 }
