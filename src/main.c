@@ -1,106 +1,181 @@
-#include "functions.h"
+#include "graph.h"
+#include "minHeap.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 
-int main()
+// Чтение входных данных и построение неориентированного графа
+static Graph* readAndBuildGraph(int* outTotalCities, int* outTotalRoads, int* outTotalStates)
 {
-    if (scanf("%d %d", &n, &m) != 2) {
-        return 1;
+    if (scanf("%d %d", outTotalCities, outTotalRoads) != 2) {
+        return NULL;
     }
 
-    adj = (EdgeNode**)calloc(n + 1, sizeof(EdgeNode*));
-    owner = (int*)calloc(n + 1, sizeof(int));
-
-    for (int i = 0; i < m; i++) {
-        int u, v, w;
-        scanf("%d %d %d", &u, &v, &w);
-        addEdge(u, v, w);
-        addEdge(v, u, w);
+    Graph* graph = createGraph(*outTotalCities);
+    if (!graph) {
+        return NULL;
     }
 
-    if (scanf("%d", &k) != 1) {
-        freeGraph();
-        return 1;
+    for (int roadIndex = 0; roadIndex < *outTotalRoads; roadIndex++) {
+        int cityFrom = 0, cityTo = 0, roadLength = 0;
+        if (scanf("%d %d %d", &cityFrom, &cityTo, &roadLength) != 3)
+            break;
+        graphAddEdge(graph, cityFrom, cityTo, roadLength);
+        graphAddEdge(graph, cityTo, cityFrom, roadLength);
     }
 
-    int* capitals = (int*)malloc(sizeof(int) * k);
-    for (int i = 0; i < k; i++)
-        scanf("%d", &capitals[i]);
+    if (scanf("%d", outTotalStates) != 1) {
+        freeGraph(graph);
+        return NULL;
+    }
 
-    MinHeap* pq = createHeap(m * 2 + k + 10);
+    return graph;
+}
 
-    for (int i = 0; i < k; i++) {
-        int cap = capitals[i];
-        int stateID = i + 1;
-        if (owner[cap] == 0) {
-            owner[cap] = stateID;
-            EdgeNode* curr = adj[cap];
-            while (curr) {
-                if (owner[curr->to] == 0) {
-                    pushHeap(pq, curr->weight, curr->to, stateID);
+// Инициализация столиц и заполнение кучи начальными рёбрами
+static MinHeap* initializeCapitals(Graph* graph, int totalRoads, int totalStates)
+{
+    // Ёмкость кучи: каждое неориентированное ребро даёт 2 записи + k столиц
+    MinHeap* heap = createMinHeap(totalRoads * 2 + totalStates);
+    if (!heap) {
+        return NULL;
+    }
+
+    for (int stateIndex = 0; stateIndex < totalStates; stateIndex++) {
+        int capitalCity = 0;
+        if (scanf("%d", &capitalCity) != 1)
+            break;
+
+        int stateId = stateIndex + 1;
+        if (graph->cityOwner[capitalCity] == 0) {
+            graph->cityOwner[capitalCity] = stateId;
+
+            EdgeNode* edge = graph->adjacencyList[capitalCity];
+            while (edge) {
+                if (graph->cityOwner[edge->to] == 0) {
+                    pushHeap(heap, edge->weight, edge->to, stateId);
                 }
-                curr = curr->next;
+                edge = edge->next;
             }
         }
     }
-    free(capitals);
 
-    HeapNode node;
-    while (popHeap(pq, &node)) {
-        int u = node.city;
-        int stateID = node.stateID;
-        if (owner[u] != 0) {
+    return heap;
+}
+
+// Многоисточниковый Дейкстра: распределение территорий
+static void distributeTerritories(Graph* graph, MinHeap* heap)
+{
+    HeapNode extractedNode;
+    while (popHeap(heap, &extractedNode)) {
+        int currentCity = extractedNode.city;
+
+        // если город захвачен, пропускаем
+        if (graph->cityOwner[currentCity] != 0) {
             continue;
         }
-        owner[u] = stateID;
-        EdgeNode* curr = adj[u];
-        while (curr) {
-            if (owner[curr->to] == 0) {
-                pushHeap(pq, curr->weight, curr->to, stateID);
+
+        graph->cityOwner[currentCity] = extractedNode.stateID;
+
+        // добавлtybt свободных соседей с накопительным расстоянием
+        EdgeNode* edge = graph->adjacencyList[currentCity];
+        while (edge) {
+            if (graph->cityOwner[edge->to] == 0) {
+                pushHeap(heap, extractedNode.weight + edge->weight, edge->to, extractedNode.stateID);
             }
-            curr = curr->next;
+            edge = edge->next;
         }
     }
-    freeHeap(pq);
+}
 
-    int* counts = (int*)calloc(k + 1, sizeof(int));
-    for (int i = 1; i <= n; i++) {
-        if (owner[i] > 0 && owner[i] <= k) {
-            counts[owner[i]]++;
+// Сбор результатов, форматированный вывод и очистка локальных массивов
+static void collectAndPrintResults(Graph* graph, int totalCities, int totalStates)
+{
+    int* citiesPerStateCount = calloc(totalStates + 1, sizeof(int));
+    if (!citiesPerStateCount)
+        return;
+
+    for (int cityIndex = 1; cityIndex <= totalCities; cityIndex++) {
+        int assignedState = graph->cityOwner[cityIndex];
+        if (assignedState > 0 && assignedState <= totalStates) {
+            citiesPerStateCount[assignedState]++;
         }
     }
 
-    int** states = (int**)malloc(sizeof(int*) * (k + 1));
-    for (int i = 1; i <= k; i++) {
-        if (counts[i] > 0) {
-            states[i] = (int*)malloc(sizeof(int) * counts[i]);
-            counts[i] = 0;
+    int** citiesByState = malloc(sizeof(int*) * (totalStates + 1));
+    if (!citiesByState) {
+        free(citiesPerStateCount);
+        return;
+    }
+
+    // Выделяем точные массивы под каждое государство
+    for (int stateIndex = 1; stateIndex <= totalStates; stateIndex++) {
+        if (citiesPerStateCount[stateIndex] > 0) {
+            citiesByState[stateIndex] = malloc(sizeof(int) * citiesPerStateCount[stateIndex]);
+            if (!citiesByState[stateIndex]) {
+                for (int j = 1; j < stateIndex; j++)
+                    free(citiesByState[j]);
+                free(citiesByState);
+                free(citiesPerStateCount);
+                return;
+            }
+            citiesPerStateCount[stateIndex] = 0; // Сбрасываем для использования как индекс
         } else {
-            states[i] = NULL;
+            citiesByState[stateIndex] = NULL;
         }
     }
 
-    for (int i = 1; i <= n; i++) {
-        int sid = owner[i];
-        if (sid > 0 && sid <= k) {
-            states[sid][counts[sid]++] = i;
+    // Заполняем массивы городами в порядке возрастания номеров
+    for (int cityIndex = 1; cityIndex <= totalCities; cityIndex++) {
+        int assignedState = graph->cityOwner[cityIndex];
+        if (assignedState > 0 && assignedState <= totalStates) {
+            citiesByState[assignedState][citiesPerStateCount[assignedState]++] = cityIndex;
         }
     }
 
-    for (int i = 1; i <= k; i++) {
-        printf("%d:", i);
-        if (states[i]) {
-            for (int j = 0; j < counts[i]; j++) {
-                printf(" %d", states[i][j]);
+    // Вывод
+    for (int stateIndex = 1; stateIndex <= totalStates; stateIndex++) {
+        printf("%d:", stateIndex);
+        if (citiesByState[stateIndex]) {
+            for (int cityIndex = 0; cityIndex < citiesPerStateCount[stateIndex]; cityIndex++) {
+                printf(" %d", citiesByState[stateIndex][cityIndex]);
             }
-            free(states[i]);
         }
         printf("\n");
     }
 
-    free(states);
-    free(counts);
-    freeGraph();
+    // Очистка локальных структур вывода
+    for (int stateIndex = 1; stateIndex <= totalStates; stateIndex++) {
+        free(citiesByState[stateIndex]);
+    }
+    free(citiesByState);
+    free(citiesPerStateCount);
+}
+
+int main()
+{
+    int totalCities = 0, totalRoads = 0, totalStates = 0;
+
+    // Ввод и построение графа
+    Graph* graph = readAndBuildGraph(&totalCities, &totalRoads, &totalStates);
+    if (!graph) {
+        fprintf(stderr, "Ошибка: не удалось создать граф\n");
+        return 1;
+    }
+
+    // Инициализация столиц и кучи
+    MinHeap* heap = initializeCapitals(graph, totalRoads, totalStates);
+    if (!heap) {
+        fprintf(stderr, "Ошибка: не удалось создать кучу\n");
+        freeGraph(graph);
+        return 1;
+    }
+
+    distributeTerritories(graph, heap);
+
+    collectAndPrintResults(graph, totalCities, totalStates);
+
+    freeHeap(heap);
+    freeGraph(graph);
+
     return 0;
 }
